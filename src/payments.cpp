@@ -46,10 +46,11 @@ json YooKassaProvider::buildCreateBody(const Config& cfg, const PaymentRequest& 
 
 PaymentInit YooKassaProvider::create(const PaymentRequest& req) {
     json body = buildCreateBody(cfg_, req);
-    // Idempotence-Key привязан к локальному id: повтор запроса не создаст второй платёж.
+    // Idempotence-Key — случайный UUID на каждый счёт. Нельзя строить его только из номера платежа в БД:
+    // ЮKassa помнит ключи 24 ч на весь магазин, и вторая копия бота (другой компьютер, новая БД) с тем же
+    // магазином получала бы на свои #1, #2… ошибку idempotence_key_duplicated или чужой старый платёж.
     auto r = cpr::Post(cpr::Url{kApi}, cpr::Authentication{cfg_.yooShopId, cfg_.yooSecretKey, cpr::AuthMode::BASIC},
-                       cpr::Header{{"Content-Type", "application/json"},
-                                   {"Idempotence-Key", "rentbot-payment-" + std::to_string(req.localId)}},
+                       cpr::Header{{"Content-Type", "application/json"}, {"Idempotence-Key", util::uuid4()}},
                        cpr::Body{body.dump()}, cpr::Timeout{20000});
     if (r.error) throw std::runtime_error("ЮKassa: " + r.error.message);
     json j = json::parse(r.text, nullptr, false);
