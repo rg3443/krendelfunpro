@@ -1,0 +1,9 @@
+{
+  "name": "twitch-rent-bot",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "cpr",
+    "nlohmann-json",
+    "sqlite3"
+  ]
+}

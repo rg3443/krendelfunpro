@@ -1,0 +1,33 @@
+# systemd-юнит бота. Установка — см. раздел «Linux-сервер» в README.md:
+#   sudo cp deploy/rentbot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now rentbot
+# Если каталог не /opt/rentbot или пользователь не rentbot — поправьте пути ниже.
+[Unit]
+Description=Telegram rent bot (Twitch chat bots)
+Wants=network-online.target
+After=network-online.target
+# Если сервер ботов (krendelbot) на этой же машине и тоже под systemd — раскомментируйте:
+After=network-online.target krendelbot.service
+
+[Service]
+Type=simple
+User=rentbot
+Group=rentbot
+WorkingDirectory=/opt/rentbot
+ExecStart=/opt/rentbot/build/rentbot /opt/rentbot/config.json
+# Время в сообщениях клиентам (запуск/окончание заказа) — по этому часовому поясу, а не по UTC сервера
+Environment=TZ=Europe/Moscow
+Restart=always
+RestartSec=5
+# Telegram long polling может висеть до ~30 с, даём время закончить корректно
+TimeoutStopSec=60
+
+# Ограничения: бот пишет только в свой каталог (rentbot.db)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/rentbot
+
+[Install]
+WantedBy=multi-user.target
