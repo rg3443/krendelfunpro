@@ -91,6 +91,7 @@ Config Config::load(const std::string& path) {
         c.paymentProvider = p.value("provider", c.paymentProvider);
         c.yooShopId = p.value("shop_id", "");
         c.yooSecretKey = p.value("secret_key", "");
+        c.paymentProxy = p.value("proxy", "");
         if (p.contains("payment_methods")) {
             c.paymentMethods = p["payment_methods"].get<std::vector<std::string>>();
         } else if (p.contains("payment_method")) {  // старый формат: один способ ("" — выбор на странице ЮKassa)

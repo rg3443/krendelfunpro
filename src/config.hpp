@@ -33,6 +33,9 @@ struct Config {
     // Платежи
     std::string paymentProvider = "yookassa";  // yookassa | mock
     std::string yooShopId, yooSecretKey;
+    // Прокси только для запросов к ЮKassa (пусто — напрямую), например "socks5h://127.0.0.1:1080".
+    // Нужен, когда IP сервера ЮKassa не пускает.
+    std::string paymentProxy;
     // Способы оплаты на выбор клиенту: "sbp", "bank_card". Несколько — бот спрашивает перед оплатой;
     // один — без вопроса; пусто — способ выбирается на странице ЮKassa.
     std::vector<std::string> paymentMethods{"sbp", "bank_card"};

@@ -10,6 +10,12 @@ using json = nlohmann::json;
 
 namespace {
 const char* kApi = "https://api.yookassa.ru/v3/payments";
+
+// payments.proxy из конфига: пусто — без прокси (cpr::Proxies{} ничего не меняет).
+cpr::Proxies yooProxies(const Config& cfg) {
+    if (cfg.paymentProxy.empty()) return cpr::Proxies{};
+    return cpr::Proxies{{"https", cfg.paymentProxy}};
+}
 }
 
 json YooKassaProvider::buildCreateBody(const Config& cfg, const PaymentRequest& req) {
@@ -51,7 +57,7 @@ PaymentInit YooKassaProvider::create(const PaymentRequest& req) {
     // магазином получала бы на свои #1, #2… ошибку idempotence_key_duplicated или чужой старый платёж.
     auto r = cpr::Post(cpr::Url{kApi}, cpr::Authentication{cfg_.yooShopId, cfg_.yooSecretKey, cpr::AuthMode::BASIC},
                        cpr::Header{{"Content-Type", "application/json"}, {"Idempotence-Key", util::uuid4()}},
-                       cpr::Body{body.dump()}, cpr::Timeout{20000});
+                       cpr::Body{body.dump()}, cpr::Timeout{20000}, yooProxies(cfg_));
     if (r.error) throw std::runtime_error("ЮKassa: " + r.error.message);
     json j = json::parse(r.text, nullptr, false);
     if (j.is_discarded() || r.status_code != 200) {
@@ -79,7 +85,8 @@ PaymentInit YooKassaProvider::create(const PaymentRequest& req) {
 
 PayStatus YooKassaProvider::check(const std::string& providerId) {
     auto r = cpr::Get(cpr::Url{std::string(kApi) + "/" + providerId},
-                      cpr::Authentication{cfg_.yooShopId, cfg_.yooSecretKey, cpr::AuthMode::BASIC}, cpr::Timeout{15000});
+                      cpr::Authentication{cfg_.yooShopId, cfg_.yooSecretKey, cpr::AuthMode::BASIC}, cpr::Timeout{15000},
+                      yooProxies(cfg_));
     if (r.error || r.status_code != 200) {
         util::log("ЮKassa check " + providerId + ": " + r.error.message + " HTTP " + std::to_string(r.status_code));
         return PayStatus::Unknown;
